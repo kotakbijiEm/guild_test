@@ -60,8 +60,9 @@ export const MontyHallGame = () => {
   };
 
   const userRevealDoor = (doorIndex: number) => {
-    // Don't allow opening the already selected door
-    if (doorIndex === gameState.selectedDoor) {
+    // Don't allow opening the currently held door (selected or final choice)
+    const heldDoor = gameState.finalChoice !== null ? gameState.finalChoice : gameState.selectedDoor;
+    if (doorIndex === heldDoor) {
       setCurrentMessage("You can't open your chosen door! Pick a different one.");
       return;
     }
@@ -78,38 +79,68 @@ export const MontyHallGame = () => {
       }));
       setCurrentMessage("Oh no! You opened the car door and lost the challenge!");
     } else {
-      // User opened a goat door - add to revealed and offer switch
+      // User opened a goat door - add to revealed doors
       const newRevealedDoors = [...gameState.revealedDoors, doorIndex];
       
-      // Find remaining unopened door (excluding selected door and revealed doors)
-      const switchOption = Array.from({ length: gameState.numDoors }, (_, i) => i)
-        .find(i => i !== gameState.selectedDoor && !newRevealedDoors.includes(i));
+      // Check if we're in the initial phase (before stick/switch decision)
+      if (gameState.finalChoice === null) {
+        // Find remaining unopened door (excluding selected door and revealed doors)
+        const switchOption = Array.from({ length: gameState.numDoors }, (_, i) => i)
+          .find(i => i !== gameState.selectedDoor && !newRevealedDoors.includes(i));
 
-      setGameState(prev => ({
-        ...prev,
-        revealedDoors: newRevealedDoors,
-        phase: 'decision',
-        switchChoice: switchOption || null
-      }));
-      
-      setCurrentMessage(
-        `Good! Door ${doorIndex + 1} has a goat. You chose Door ${(gameState.selectedDoor || 0) + 1}. Only Door ${(switchOption || 0) + 1} remains. Do you want to STICK or SWITCH?`
-      );
+        setGameState(prev => ({
+          ...prev,
+          revealedDoors: newRevealedDoors,
+          phase: 'decision',
+          switchChoice: switchOption || null
+        }));
+        
+        setCurrentMessage(
+          `Good! Door ${doorIndex + 1} has a goat. You chose Door ${(gameState.selectedDoor || 0) + 1}. Only Door ${(switchOption || 0) + 1} remains. Do you want to STICK or SWITCH?`
+        );
+      } else {
+        // After stick/switch decision - continue revealing doors
+        const remainingDoors = Array.from({ length: gameState.numDoors }, (_, i) => i)
+          .filter(i => i !== heldDoor && !newRevealedDoors.includes(i));
+        
+        setGameState(prev => ({
+          ...prev,
+          revealedDoors: newRevealedDoors
+        }));
+
+        if (remainingDoors.length === 0) {
+          // All doors except the held door are revealed - game ends
+          const hasWon = heldDoor === gameState.carDoor;
+          setGameState(prev => ({ ...prev, phase: 'result', hasWon }));
+          setCurrentMessage("And the winner is...!");
+        } else {
+          setCurrentMessage(`Good! Door ${doorIndex + 1} has a goat. Continue opening doors or see what's behind your Door ${(heldDoor || 0) + 1}!`);
+        }
+      }
     }
   };
 
   const makeDecision = (stick: boolean) => {
     const finalChoice = stick ? gameState.selectedDoor : gameState.switchChoice;
-    const hasWon = finalChoice === gameState.carDoor;
     
     setGameState(prev => ({
       ...prev,
-      phase: 'result',
+      phase: 'user-revealing',
       finalChoice,
-      hasWon
+      selectedDoor: finalChoice
     }));
 
-    setCurrentMessage("And the winner is...!");
+    const remainingDoors = Array.from({ length: gameState.numDoors }, (_, i) => i)
+      .filter(i => i !== finalChoice && !gameState.revealedDoors.includes(i));
+    
+    if (remainingDoors.length === 0) {
+      // All doors except final choice are revealed
+      const hasWon = finalChoice === gameState.carDoor;
+      setGameState(prev => ({ ...prev, phase: 'result', hasWon }));
+      setCurrentMessage("And the winner is...!");
+    } else {
+      setCurrentMessage(`You're now holding Door ${(finalChoice || 0) + 1}. Continue opening the remaining doors!`);
+    }
   };
 
   const resetGame = () => {

@@ -8,7 +8,7 @@ import { Door } from "./Door";
 import { GameStatus } from "./GameStatus";
 import { WinCelebration } from "./WinCelebration";
 
-type GamePhase = 'setup' | 'choosing' | 'revealing' | 'decision' | 'result';
+type GamePhase = 'setup' | 'choosing' | 'user-revealing' | 'decision' | 'result';
 
 interface GameState {
   numDoors: number;
@@ -23,7 +23,7 @@ interface GameState {
 
 export const MontyHallGame = () => {
   const [gameState, setGameState] = useState<GameState>({
-    numDoors: 3,
+    numDoors: 7,
     selectedDoor: null,
     carDoor: 0,
     revealedDoors: [],
@@ -34,7 +34,6 @@ export const MontyHallGame = () => {
   });
 
   const [currentMessage, setCurrentMessage] = useState("Welcome to the N-Door Monty Hall Challenge!");
-  const [isRevealing, setIsRevealing] = useState(false);
 
   const initializeGame = () => {
     const carDoor = Math.floor(Math.random() * gameState.numDoors);
@@ -52,58 +51,51 @@ export const MontyHallGame = () => {
   };
 
   const selectDoor = (doorIndex: number) => {
-    if (gameState.phase !== 'choosing') return;
-    
-    setGameState(prev => ({ ...prev, selectedDoor: doorIndex }));
-    setCurrentMessage(`You chose Door ${doorIndex + 1}. Now, let's see what Monty does...`);
-    
-    // Start revealing phase after a short delay
-    setTimeout(() => {
-      revealGoats(doorIndex);
-    }, 1500);
+    if (gameState.phase === 'choosing') {
+      setGameState(prev => ({ ...prev, selectedDoor: doorIndex, phase: 'user-revealing' }));
+      setCurrentMessage(`You chose Door ${doorIndex + 1}. Now choose another door to open. Be careful - if it's the car, you lose!`);
+    } else if (gameState.phase === 'user-revealing') {
+      userRevealDoor(doorIndex);
+    }
   };
 
-  const revealGoats = async (selectedDoor: number) => {
-    setGameState(prev => ({ ...prev, phase: 'revealing' }));
-    setIsRevealing(true);
-    setCurrentMessage("Monty is revealing goats...");
-
-    // Get all doors except the selected one and the car door
-    const doorsToReveal = [];
-    for (let i = 0; i < gameState.numDoors; i++) {
-      if (i !== selectedDoor && i !== gameState.carDoor) {
-        doorsToReveal.push(i);
-      }
+  const userRevealDoor = (doorIndex: number) => {
+    // Don't allow opening the already selected door
+    if (doorIndex === gameState.selectedDoor) {
+      setCurrentMessage("You can't open your chosen door! Pick a different one.");
+      return;
     }
 
-    // We need to reveal N-2 doors total
-    const numToReveal = gameState.numDoors - 2;
-    const revealThese = doorsToReveal.slice(0, numToReveal);
-
-    // Reveal doors one by one with animation
-    for (let i = 0; i < revealThese.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    // Check if this is the car door
+    if (doorIndex === gameState.carDoor) {
+      // Game over - user found the car
       setGameState(prev => ({
         ...prev,
-        revealedDoors: [...prev.revealedDoors, revealThese[i]]
+        phase: 'result',
+        finalChoice: doorIndex,
+        hasWon: false,
+        revealedDoors: [...prev.revealedDoors, doorIndex]
       }));
-      setCurrentMessage(`Monty opened Door ${revealThese[i] + 1} - it's a goat!`);
+      setCurrentMessage("Oh no! You opened the car door and lost the challenge!");
+    } else {
+      // User opened a goat door - add to revealed and offer switch
+      const newRevealedDoors = [...gameState.revealedDoors, doorIndex];
+      
+      // Find remaining unopened door (excluding selected door and revealed doors)
+      const switchOption = Array.from({ length: gameState.numDoors }, (_, i) => i)
+        .find(i => i !== gameState.selectedDoor && !newRevealedDoors.includes(i));
+
+      setGameState(prev => ({
+        ...prev,
+        revealedDoors: newRevealedDoors,
+        phase: 'decision',
+        switchChoice: switchOption || null
+      }));
+      
+      setCurrentMessage(
+        `Good! Door ${doorIndex + 1} has a goat. You chose Door ${(gameState.selectedDoor || 0) + 1}. Only Door ${(switchOption || 0) + 1} remains. Do you want to STICK or SWITCH?`
+      );
     }
-
-    // Find the switch option (the remaining unopened door that's not the selected one)
-    const switchOption = Array.from({ length: gameState.numDoors }, (_, i) => i)
-      .find(i => i !== selectedDoor && !revealThese.includes(i));
-
-    setGameState(prev => ({ 
-      ...prev, 
-      phase: 'decision',
-      switchChoice: switchOption || null
-    }));
-    
-    setCurrentMessage(
-      `You chose Door ${selectedDoor + 1}. Only Door ${(switchOption || 0) + 1} remains unopened. Do you want to STICK with your original choice, or SWITCH?`
-    );
-    setIsRevealing(false);
   };
 
   const makeDecision = (stick: boolean) => {
@@ -135,7 +127,7 @@ export const MontyHallGame = () => {
 
   const updateNumDoors = (value: string) => {
     const num = parseInt(value);
-    if (num >= 3 && num <= 10) {
+    if (num >= 7 && num <= 10) {
       setGameState(prev => ({ ...prev, numDoors: num }));
     }
   };
@@ -203,12 +195,12 @@ export const MontyHallGame = () => {
             <div className="space-y-6 text-center">
               <div className="space-y-2">
                 <Label htmlFor="numDoors" className="text-lg font-medium">
-                  Set Your Doors (3-10)
+                  Set Your Doors (7-10)
                 </Label>
                 <Input
                   id="numDoors"
                   type="number"
-                  min="3"
+                  min="7"
                   max="10"
                   value={gameState.numDoors}
                   onChange={(e) => updateNumDoors(e.target.value)}
@@ -232,7 +224,7 @@ export const MontyHallGame = () => {
             <GameStatus 
               message={currentMessage} 
               phase={gameState.phase}
-              isRevealing={isRevealing}
+              isRevealing={false}
             />
 
             <div className="flex flex-wrap justify-center gap-6 mb-8 min-h-[200px]">
@@ -246,7 +238,7 @@ export const MontyHallGame = () => {
                   isFinalChoice={gameState.finalChoice === index}
                   isSwitchOption={gameState.switchChoice === index}
                   onClick={() => selectDoor(index)}
-                  canClick={gameState.phase === 'choosing'}
+                  canClick={gameState.phase === 'choosing' || gameState.phase === 'user-revealing'}
                   showContent={gameState.phase === 'result' || gameState.revealedDoors.includes(index)}
                 />
               ))}

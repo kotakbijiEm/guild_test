@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface WinCelebrationProps {
@@ -33,14 +32,12 @@ export const WinCelebration = ({ hasWon, finalChoice }: WinCelebrationProps) => 
                 You won the car behind Door {finalChoice}! 🚗
               </p>
               <div className="mt-6">
-                <Button
-                  variant="winner"
-                  size="lg"
+                <button
                   onClick={handleClaimPrize}
-                  className="text-lg px-8 py-3 animate-pulse-glow"
+                  className="bg-yellow-500 text-black hover:bg-yellow-400 rounded-md text-lg px-8 py-3 font-medium transition-colors animate-pulse-glow"
                 >
                   🏆 Claim Your Prize! 🏆
-                </Button>
+                </button>
               </div>
               <p className="text-sm text-muted-foreground">
                 You made the statistically optimal choice!

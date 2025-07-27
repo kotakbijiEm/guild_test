@@ -1,9 +1,4 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Door } from "./Door";
 import { GameStatus } from "./GameStatus";
 import { WinCelebration } from "./WinCelebration";
@@ -34,6 +29,7 @@ export const MontyHallGame = () => {
   });
 
   const [currentMessage, setCurrentMessage] = useState("Welcome to the N-Door Monty Hall Challenge!");
+  const [showLearnMore, setShowLearnMore] = useState(false);
 
   const initializeGame = () => {
     const carDoor = Math.floor(Math.random() * gameState.numDoors);
@@ -174,80 +170,88 @@ export const MontyHallGame = () => {
             Test your probability intuition in this classic game show puzzle!
           </p>
           
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="link" className="text-primary">
-                Learn More About the Problem
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Understanding the N-Door Monty Hall Challenge</DialogTitle>
-              </DialogHeader>
-              <DialogDescription className="text-left space-y-4 text-base">
-                <p>
-                  Imagine you're on a game show, facing N doors. Behind just one of these doors is a gleaming, 
-                  brand-new car – your coveted prize! Behind all the other N-1 doors are goats.
-                </p>
-                
-                <p className="font-semibold">Your Initial Choice:</p>
-                <p>
-                  The host, Monty Hall, invites you to make your first selection. You choose one door – let's call it your "initial pick." 
-                  At this moment, your chances of having picked the car are a modest 1 out of N. Conversely, the collective chances of the car 
-                  being behind any of the other N-1 doors are much higher: (N-1) out of N.
-                </p>
-                
-                <p className="font-semibold">Monty's Strategic Reveal:</p>
-                <p>
-                  Now, here's where the magic happens. Monty, who always knows exactly where the car is hidden, will then proceed to open N-2 
-                  of the remaining doors. These are all the doors you didn't choose, except for one. With each dramatic reveal, Monty ensures 
-                  that every single door he opens displays a goat. He will never open the door with the car.
-                </p>
-                
-                <p className="font-semibold">The Pivotal Decision:</p>
-                <p>
-                  So, you're left with two closed doors: Your initial chosen door, still unopened, and one single, unopened door from the 
-                  large group you didn't initially pick. Monty asks: "Do you want to STICK with your original choice, or would you like to SWITCH?"
-                </p>
-                
-                <p className="font-semibold">The Power of Switching:</p>
-                <p>
-                  While your initial choice began with a 1/N chance of being correct, that single remaining unchosen, unopened door now 
-                  effectively carries the accumulated probability of all the other N-1 doors that Monty deliberately avoided opening. 
-                  The odds overwhelmingly favor switching your choice!
-                </p>
-              </DialogDescription>
-            </DialogContent>
-          </Dialog>
+          <button 
+            onClick={() => setShowLearnMore(!showLearnMore)}
+            className="text-primary underline hover:no-underline transition-all duration-200"
+          >
+            Learn More About the Problem
+          </button>
+          
+          {showLearnMore && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+              <div className="bg-background border border-border rounded-lg max-w-3xl max-h-[80vh] overflow-y-auto p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold">Understanding the N-Door Monty Hall Challenge</h3>
+                  <button 
+                    onClick={() => setShowLearnMore(false)}
+                    className="text-muted-foreground hover:text-foreground text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="text-left space-y-4 text-base text-muted-foreground">
+                  <p>
+                    Imagine you're on a game show, facing N doors. Behind just one of these doors is a gleaming, 
+                    brand-new car – your coveted prize! Behind all the other N-1 doors are goats.
+                  </p>
+                  
+                  <p className="font-semibold text-foreground">Your Initial Choice:</p>
+                  <p>
+                    The host, Monty Hall, invites you to make your first selection. You choose one door – let's call it your "initial pick." 
+                    At this moment, your chances of having picked the car are a modest 1 out of N. Conversely, the collective chances of the car 
+                    being behind any of the other N-1 doors are much higher: (N-1) out of N.
+                  </p>
+                  
+                  <p className="font-semibold text-foreground">Monty's Strategic Reveal:</p>
+                  <p>
+                    Now, here's where the magic happens. Monty, who always knows exactly where the car is hidden, will then proceed to open N-2 
+                    of the remaining doors. These are all the doors you didn't choose, except for one. With each dramatic reveal, Monty ensures 
+                    that every single door he opens displays a goat. He will never open the door with the car.
+                  </p>
+                  
+                  <p className="font-semibold text-foreground">The Pivotal Decision:</p>
+                  <p>
+                    So, you're left with two closed doors: Your initial chosen door, still unopened, and one single, unopened door from the 
+                    large group you didn't initially pick. Monty asks: "Do you want to STICK with your original choice, or would you like to SWITCH?"
+                  </p>
+                  
+                  <p className="font-semibold text-foreground">The Power of Switching:</p>
+                  <p>
+                    While your initial choice began with a 1/N chance of being correct, that single remaining unchosen, unopened door now 
+                    effectively carries the accumulated probability of all the other N-1 doors that Monty deliberately avoided opening. 
+                    The odds overwhelmingly favor switching your choice!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {gameState.phase === 'setup' && (
-          <Card className="p-8 mb-8 bg-card/50 backdrop-blur-sm border-border/50">
+          <div className="p-8 mb-8 bg-card/50 backdrop-blur-sm border border-border/50 rounded-lg">
             <div className="space-y-6 text-center">
               <div className="space-y-2">
-                <Label htmlFor="numDoors" className="text-lg font-medium">
+                <label htmlFor="numDoors" className="block text-lg font-medium">
                   Set Your Doors (7-10)
-                </Label>
-                <Input
+                </label>
+                <input
                   id="numDoors"
                   type="number"
                   min="7"
                   max="10"
                   value={gameState.numDoors}
                   onChange={(e) => updateNumDoors(e.target.value)}
-                  className="w-32 mx-auto text-center text-lg"
+                  className="w-32 mx-auto text-center text-lg h-10 rounded-md border border-input bg-background px-3 py-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
               </div>
-              <Button 
-                variant="game" 
-                size="lg" 
+              <button 
                 onClick={initializeGame}
-                className="text-lg px-8 py-3"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md text-lg px-8 py-3 font-medium transition-colors"
               >
                 Start Game
-              </Button>
+              </button>
             </div>
-          </Card>
+          </div>
         )}
 
         {gameState.phase !== 'setup' && (
@@ -277,22 +281,18 @@ export const MontyHallGame = () => {
 
             {gameState.phase === 'decision' && (
               <div className="flex justify-center gap-6 mb-8">
-                <Button
-                  variant="game-stick"
-                  size="lg"
+                <button
                   onClick={() => makeDecision(true)}
-                  className="text-lg px-8 py-3"
+                  className="bg-green-600 text-white hover:bg-green-700 rounded-md text-lg px-8 py-3 font-medium transition-colors"
                 >
                   STICK with Door {(gameState.selectedDoor || 0) + 1}
-                </Button>
-                <Button
-                  variant="game-switch"
-                  size="lg"
+                </button>
+                <button
                   onClick={() => makeDecision(false)}
-                  className="text-lg px-8 py-3"
+                  className="bg-blue-600 text-white hover:bg-blue-700 rounded-md text-lg px-8 py-3 font-medium transition-colors"
                 >
                   SWITCH to Door {(gameState.switchChoice || 0) + 1}
-                </Button>
+                </button>
               </div>
             )}
 
@@ -303,14 +303,12 @@ export const MontyHallGame = () => {
                   finalChoice={(gameState.finalChoice || 0) + 1}
                 />
                 <div className="text-center">
-                  <Button
-                    variant="game"
-                    size="lg"
+                  <button
                     onClick={resetGame}
-                    className="text-lg px-8 py-3"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md text-lg px-8 py-3 font-medium transition-colors"
                   >
                     Play Again
-                  </Button>
+                  </button>
                 </div>
               </>
             )}
